@@ -1,5 +1,6 @@
 import { createServer } from "@graphql-yoga/node";
 import { IResolvers } from "@graphql-tools/utils";
+import mysql from "serverless-mysql";
 
 const typeDefs = /* GraphQL */ `
   enum TaskStatus {
@@ -30,7 +31,11 @@ const typeDefs = /* GraphQL */ `
   }
 `;
 
-const resolvers: IResolvers = {
+interface IContext {
+  db: mysql.ServerlessMysql;
+}
+
+const resolvers: IResolvers<any, IContext> = {
   Query: {
     tasks(parent, args, context) {
       return [];
@@ -52,13 +57,24 @@ const resolvers: IResolvers = {
   },
 };
 
+const db = mysql({
+  config: {
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    database: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+  },
+});
+
 const server = createServer({
   schema: {
     typeDefs,
     resolvers,
   },
   endpoint: "/api/graphql",
-  // graphiql: false, // uncomment to disable GraphiQL
+  context: {
+    db,
+  },
 });
 
 export default server;
